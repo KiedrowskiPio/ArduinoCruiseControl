@@ -7,7 +7,8 @@ const int scale = 60000/CALCULATION_INTERVAL/PUSE_PER_REV;
 // vehicle configuration
 const int highestGearRatio = 1; //My car has direct drive on its highest gear - needs to be changed accorging to vehicle specs
 const double differentialRatio = 4,3; //Has to be changed according to vehicle specs 
-const int wheelCircumference=
+const int wheelCircumference = 182; //wheel circumference in centymeters
+double combinedRatio; //distance traveled through 1 driveshaft revolution
 ///
 int vehicleSpeed = 0;
 
@@ -19,6 +20,7 @@ int stepCount = 0;
 
 
 void setup() {
+  combinedRatio = highestGearRatio/differentialRatio*wheelCircumference/100;
   Serial.begin(9600);
   attachInterrupt(digitalPinToInterrupt(2), incrementCount, FALLING);
 }
@@ -26,7 +28,7 @@ void setup() {
 void loop() {
   if(millis() - stopWatch > CALCULATION_INTERVAL){
     rpm = count*scale;
-    Serial.print("Driveshaft speed:");
+    Serial.print("Driveshaft speed: ");
     Serial.print(rpm);
     Serial.println("rpm");
     
