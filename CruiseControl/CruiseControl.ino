@@ -10,7 +10,7 @@ const double differentialRatio = 4,3; //Has to be changed according to vehicle s
 const int wheelCircumference = 182; //wheel circumference in centymeters
 double combinedRatio; //distance traveled through 1 driveshaft revolution
 ///
-int vehicleSpeed = 0;
+int vehicleSpeed = 0; //calculated vehicle speed in km/h
 
 /// stepper motor controll ///
 const int stepsPerRev = 200; //Has to be changed accordingly to the motor
@@ -31,6 +31,10 @@ void loop() {
     Serial.print("Driveshaft speed: ");
     Serial.print(rpm);
     Serial.println("rpm");
+    vehicleSpeed = rpm*combinedRatio*60;
+    Serial.print("Vehicle speed: ");
+    Serial.print(vehicleSpeed);
+    Serial.println("")
     
     count = 0;
     stopWatch = millis();
