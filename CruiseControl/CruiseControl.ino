@@ -15,6 +15,7 @@ const double differentialRatio = 4,3; //Has to be changed according to vehicle s
 const int wheelCircumference = 182; //wheel circumference in centymeters
 double combinedRatio; //distance traveled through 1 driveshaft revolution
 int vehicleSpeed = 0; //calculated vehicle speed in km/h
+int savedSpeed = 0; //speed saved from previous cycle
 
 //stepper motor control
 const int stepsPerRev = 200; //Has to be changed accordingly to the motor
@@ -45,7 +46,7 @@ void loop() {
     Serial.println("");
     
     count = 0;
-    stopWatch = millis();
+    stopWatch = millis();t
   }
   if(systemActive = true){
       if (setSpeed < vehicleSpeed-4 || setSpeed > vehicleSpeed+4)
@@ -53,19 +54,37 @@ void loop() {
         Serial.println("vehicle speed is close to desired")
       }
       else if(setSpeed > vehicleSpeed){
-        myStepper.step(stepsPerRev / 50); //step 2% of revolution
-        Serial.println("vehicle speed is too slow. Speeding up...")
+        if(savedSpeed > vehicleSpeed-1){
+          Serial.println("vehicle is accelerating")
+        }
+        else{
+          myStepper.step(stepsPerRev / 50); //step 2% of revolution
+          Serial.println("vehicle speed is too slow. Speeding up...")
+        }
       }
       else if(setSpeed < vehicleSpeed){
-        myStepper.step(-stepsPerRev / 25); //step 4% of revolution back
-        Serial.println("vehicle speed i too great. Slowing down...")
+        if(savedSpeed < vehicleSpeed+3){
+          Serial.println("vehicle is slowing down")
+        }
+        else{
+          myStepper.step(-stepsPerRev / 25); //step 4% of revolution back
+          Serial.println("vehicle speed is too great. Slowing down...")
+        }
+
       }
   }
+
+
 
 delay(2000);
 }
 
 void incrementCount(){
   count++;
+}
+
+void StopCruiseControl(){
+  savedSpeed = 0; //check it later
+  //make stepper motor free spin
 }
 

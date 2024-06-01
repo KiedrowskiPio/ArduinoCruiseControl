@@ -1,17 +1,23 @@
-#include <Stepper.h> //Stepper motor control library
-const int stepsPerRev = 200; //Has to be changed accordingly to the motor
-Stepper myStepper(stepsPerRev, 8, 9, 10, 11); //Initialization of the stepper motor
-int stepCount = 0; 
+// Numer analogowego pinu do którego podłączony jest potencjometr
+#define POTENCJOMETR_PIN 0
 
-void setup() {
-  // put your setup code here, to run once:
+void setup()
+{
+  // Ustawienie komunikacji z komputerem na 57600 bodów
+  Serial.begin(57600);
 
+  // Oczekiwanie na uaktywnienie portu w Arduino Leonardo
+  while (!Serial);
 }
 
-void loop() {
-  int neededPower
+void loop()
+{
+  // Odczyt wartości z potencjometru
+  int value = analogRead(POTENCJOMETR_PIN);
 
-  
-  myStepper.step(stepsPerRev / 100); //step 1% of revolution
+  // Wysłanie wartości do komputera
+  Serial.println(value, DEC);
 
+  // Oczekiwanie 20 ms czyli wysyłanie 50x na sekundę
+  delay(1000);
 }
