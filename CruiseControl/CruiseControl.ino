@@ -3,6 +3,7 @@
 #include <Encoder.h>
 #include <Arduino.h>
 #include <HallA1302.h>
+#include <Button.h>
 
 //Pin Definition
 #define BRAKE_PEDAL_INPUT 4 //input from brake pedal
@@ -12,6 +13,7 @@
 #define ROTARTENCI_PIN_S1 5
 #define STEPPER_PIN_STEP 7
 #define STEPPER_PIN_DIR 6
+#define STEPPER_PIN_SLEEP 8
 
 //Driveshaft Speed calculation
 const int PULSE_PER_REV = 2; //number of magnets on driveshaft
@@ -42,6 +44,7 @@ bool systemActive = false; //system working flag
 Encoder rotartEnc1(ROTARTENCI_PIN_D, ROTARTENCI_PIN_CLK);
 HallA1302 hallA(HALLA_PIN_COUT);
 long rotaryEncIOldPosition  = 0;
+Button pushButton(BRAKE_PEDAL_INPUT);
 
 void setup() {
   rotaryEncIButton.init();
@@ -49,57 +52,63 @@ void setup() {
   combinedRatio = highestGearRatio/differentialRatio*wheelCircumference/100;
   myStepper.setSpeed(motorSpeed);
   Serial.begin(9600);
-  attachInterrupt(digitalPinToInterrupt(2), incrementCount, FALLING);
+  attachInterrupt(HALL_PIN_VOUT, incrementCount, RISING);
+  pushButton.init();
 }
 
 void loop() {
+  bool pushButtonVal = pushButton.read();
+  if(pushButtonVal == 0){
+    digitalWrite(STEPPER_PIN_SLEEP, HIGH);
+    long rotaryEncINewPosition = rotaryEncI.read();
+      if (rotaryEncINewPosition != rotaryEncIOldPosition) {
+        rotaryEncIOldPosition = rotaryEncINewPosition;
+        setSpeed = rotaryEncINewPosition;
+        Serial.print(F("Wybrana prędkość: "));
+        Serial.print(rotaryEncINewPosition);
 
-  long rotaryEncINewPosition = rotaryEncI.read();
-  if (rotaryEncINewPosition != rotaryEncIOldPosition) {
-    rotaryEncIOldPosition = rotaryEncINewPosition;
-    setSpeed = rotaryEncINewPosition;
-    Serial.print(F("Wybrana prędkość: "));
-    Serial.print(rotaryEncINewPosition);
+      if(millis() - stopWatch > CALCULATION_INTERVAL){
+        rpm = count*scale;
+        Serial.print("Driveshaft speed: ");
+        Serial.print(rpm);
+        Serial.println("rpm");
+        vehicleSpeed = rpm*combinedRatio*60;
+        Serial.print("Vehicle speed: ");
+        Serial.print(vehicleSpeed);
+        Serial.println("");
+        
+        count = 0;
+        stopWatch = millis();
+      }
+      if(systemActive = true){
+          if (setSpeed < vehicleSpeed-4 || setSpeed > vehicleSpeed+4)
+          {
+            Serial.println("vehicle speed is close to desired")
+          }
+          else if(setSpeed > vehicleSpeed){
+            if(savedSpeed > vehicleSpeed-1){
+              Serial.println("vehicle is accelerating")
+            }
+            else{
+              myStepper.step(1, 5);
+              Serial.println("vehicle velocity is too low. Speeding up...")
+            }
+          }
+          else if(setSpeed < vehicleSpeed){
+            if(savedSpeed < vehicleSpeed+3){
+              Serial.println("vehicle is slowing down")
+            }
+            else{
+              myStepper.step(0, 5);
+              Serial.println("vehicle speed is too great. Slowing down...")
+            }
 
-  if(millis() - stopWatch > CALCULATION_INTERVAL){
-    rpm = count*scale;
-    Serial.print("Driveshaft speed: ");
-    Serial.print(rpm);
-    Serial.println("rpm");
-    vehicleSpeed = rpm*combinedRatio*60;
-    Serial.print("Vehicle speed: ");
-    Serial.print(vehicleSpeed);
-    Serial.println("");
-    
-    count = 0;
-    stopWatch = millis();
+          }
+    }
   }
-  if(systemActive = true){
-      if (setSpeed < vehicleSpeed-4 || setSpeed > vehicleSpeed+4)
-      {
-        Serial.println("vehicle speed is close to desired")
-      }
-      else if(setSpeed > vehicleSpeed){
-        if(savedSpeed > vehicleSpeed-1){
-          Serial.println("vehicle is accelerating")
-        }
-        else{
-          myStepper.step(1, 5);
-          Serial.println("vehicle velocity is too low. Speeding up...")
-        }
-      }
-      else if(setSpeed < vehicleSpeed){
-        if(savedSpeed < vehicleSpeed+3){
-          Serial.println("vehicle is slowing down")
-        }
-        else{
-          myStepper.step(0, 5);
-          Serial.println("vehicle speed is too great. Slowing down...")
-        }
-
-      }
+  else{
+    StopCruiseControl();
   }
-
 
 delay(2000);
 }
@@ -109,7 +118,7 @@ void incrementCount(){
 }
 
 void StopCruiseControl(){
-  savedSpeed = 0; //check it later
-  //make stepper motor free spin
+  savedSpeed = 0;
+  digitalWrite(STEPPER_PIN_SLEEP, LOW); //puts stepper motor driver into sleep mode
 }
 
